@@ -1,9 +1,12 @@
 import Navbar from "./components/Navbar"
 import Sidebar from "./components/Sidebar"
 import MetricCard from "./components/MetricCard"
+import SSSCard from "./components/SSSCard"
+import ObjectiveSlider from "./components/ObjectiveSlider"
 import EnergyChart from "./components/EnergyChart"
 import CarbonChart from "./components/CarbonChart"
 import GoldenSignatureChart from "./components/GoldenSignatureChart"
+import AIPanel from "./components/AIPanel"
 
 function App() {
 
@@ -53,17 +56,19 @@ function App() {
               title="Carbon Emissions"
               value="1.7"
               unit="tCO₂"
-              color="text-alert"
+              color="text-success"
             />
 
-            <MetricCard
-              title="Quality Score"
-              value="95"
-              unit="%"
-              color="text-gold"
-            />
+            <SSSCard score={94} />
 
           </div>
+
+          {/* AI INSIGHTS */}
+
+          <AIPanel />
+
+          <ObjectiveSlider />
+
 
 
           {/* CHART SECTION */}
@@ -120,7 +125,7 @@ function App() {
                   <td className="py-3">B-204</td>
                   <td>512 kWh</td>
                   <td className="text-success">92%</td>
-                  <td className="text-alert">1.7 tCO₂</td>
+                  <td className="text-success">1.7 tCO₂</td>
                   <td className="text-gold">95%</td>
                 </tr>
 
@@ -128,7 +133,7 @@ function App() {
                   <td className="py-3">B-203</td>
                   <td>520 kWh</td>
                   <td className="text-success">91%</td>
-                  <td className="text-alert">1.9 tCO₂</td>
+                  <td className="text-success">1.9 tCO₂</td>
                   <td className="text-gold">94%</td>
                 </tr>
 
