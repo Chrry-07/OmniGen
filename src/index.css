@@ -1,0 +1,12 @@
+/* stylelint-disable-next-line at-rule-no-unknown */
+@tailwind base;
+/* stylelint-disable-next-line at-rule-no-unknown */
+@tailwind components;
+/* stylelint-disable-next-line at-rule-no-unknown */
+@tailwind utilities;
+
+body {
+  background-color: #020617;
+  color: white;
+  font-family: system-ui, sans-serif;
+}
