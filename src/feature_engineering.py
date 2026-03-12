@@ -36,6 +36,16 @@ def create_features(df):
         - 0.1 * df["Friability"]
     )
 
+    # ---------------------------------------------------
+    # NEW FEATURE: Carbon Emission
+    # ---------------------------------------------------
+
+    emission_factor = 0.475  # kg CO2 per kWh
+
+    df["carbon_emission"] = (
+        df["Power_Consumption_kW_mean"] * emission_factor
+    )
+
     return df
 
 

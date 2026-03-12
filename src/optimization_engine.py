@@ -3,6 +3,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_absolute_error, r2_score
 
+from src.nsga_optimizer import run_nsga_optimization, extract_pareto
 
 # ---------------------------------------------------
 # Load dataset
@@ -43,7 +44,8 @@ def prepare_data(df):
 def train_model(X, y):
 
     X_train, X_test, y_train, y_test = train_test_split(
-        X, y,
+        X,
+        y,
         test_size=0.2,
         random_state=42
     )
@@ -82,8 +84,16 @@ def suggest_optimal_parameters(model, golden_signature, feature_columns):
 
     predicted_quality = model.predict(golden_df)[0]
 
+    # Carbon emission calculation
+    power = golden_df["Power_Consumption_kW_mean"].values[0]
+
+    emission_factor = 0.475
+    predicted_carbon = power * emission_factor
+
     print("\nIf process runs near GOLDEN SIGNATURE:")
+
     print("Predicted Quality Score:", round(predicted_quality, 2))
+    print("Predicted Carbon Emission:", round(predicted_carbon, 2), "kg CO2")
 
 
 # ---------------------------------------------------
@@ -119,9 +129,9 @@ def compare_with_golden(df):
         if abs(diff) > 0.5:
 
             if diff > 0:
-                print(f"{param}: Reduce by {round(diff,2)}")
+                print(f"{param}: Reduce by {round(diff, 2)}")
             else:
-                print(f"{param}: Increase by {round(abs(diff),2)}")
+                print(f"{param}: Increase by {round(abs(diff), 2)}")
 
         else:
             print(f"{param}: Within optimal range")
@@ -142,6 +152,40 @@ def run_optimization():
     print("Training optimization model...")
 
     model = train_model(X, y)
+
+    # ---------------------------------------------------
+    # Run multi-objective optimization (NSGA-II)
+    # ---------------------------------------------------
+
+    print("\nRunning multi-objective optimization (NSGA-II)...")
+
+    population = run_nsga_optimization(model)
+
+    pareto_points = extract_pareto(population)
+
+    print("Pareto solutions generated:", len(pareto_points))
+
+    print("\nSample Pareto solutions:")
+
+    for p in pareto_points[:5]:
+        print(p)
+
+    # ---------------------------------------------------
+    # Save Pareto frontier for dashboard
+    # ---------------------------------------------------
+
+    pareto_df = pd.DataFrame(pareto_points)
+
+    pareto_df.to_csv(
+        "data/processed/pareto_frontier.csv",
+        index=False
+    )
+
+    print("Pareto frontier saved to data/processed/pareto_frontier.csv")
+
+    # ---------------------------------------------------
+    # Golden signature prediction
+    # ---------------------------------------------------
 
     golden_signature = pd.read_csv(
         "data/processed/golden_signature.csv",
