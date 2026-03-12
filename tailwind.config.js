@@ -8,11 +8,10 @@ export default {
     extend: {
       colors: {
         vercel: {
-          dark: '#000000',
-          accents1: '#111111',
-          accents2: '#333333',
+          accents1: '#111',
+          accents2: '#333',
           accents7: '#eaeaea',
-          blue: '#0070f3',
+          dark: '#000'
         }
       }
     },
