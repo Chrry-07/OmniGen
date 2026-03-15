@@ -290,29 +290,28 @@ function App() {
     setParameters(prev => ({ ...prev, [name]: parseFloat(value) }));
   };
 
-    const handleSnapToGolden = async () => {
-      try {
-        const response = await fetch(`${API_BASE}/golden_signature`);
-    
-        const data = await response.json();
-    
-        const optimal = {
-          temperature: data.temperature[0],
-          pressure: data.pressure[0],
-          humidity: data.humidity[0],
-          motorSpeed: data.motorSpeed[0],
-          compression: data.compression[0],
-          flowRate: data.flowRate[0],
-          power: data.power[0],
-          vibration: data.vibration[0]
-        };
-    
-        setParameters(optimal);
-    
-      } catch (error) {
-        console.error("Golden signature error:", error);
-      }
-    };
+  const handleSnapToGolden = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/golden_signature`);
+      const data = await res.json();
+  
+      const values = data["0"];
+  
+      setParameters({
+        temperature: Number(values["0"]).toFixed(1),
+        pressure: Number(values["1"]).toFixed(2),
+        humidity: Number(values["2"]).toFixed(1),
+        motorSpeed: Math.round(values["3"]),
+        compression: Number(values["4"]).toFixed(2),
+        flowRate: Number(values["5"]).toFixed(2),
+        power: Number(values["6"]).toFixed(1),
+        vibration: Number(values["7"]).toFixed(1)
+      });
+  
+    } catch (err) {
+      console.error("Snap error:", err);
+    }
+  };
   
     const fetchSSI = async () => {
       try {
@@ -710,7 +709,7 @@ function App() {
             
             {/* COLUMN 2: CHARTS & BATCH MONITOR */}
             <div className="lg:col-span-6 flex flex-col gap-6">
-              <div className="border border-gray-800 rounded-xl p-6 bg-gray-950 shadow-xl flex flex-col h-[340px]">
+              <div className="border border-gray-800 rounded-xl p-6 bg-gray-950 shadow-xl flex flex-col h-[480px]">
                 <div className="flex justify-between items-center mb-3 border-b border-gray-800 pb-2">
                   <h2 className="text-lg font-semibold text-white">Pareto Chart</h2>
 
