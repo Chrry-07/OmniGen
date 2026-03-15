@@ -285,6 +285,9 @@ function App() {
   ];
 
   const [hoveredData, setHoveredData] = useState(chartData[6]);
+  const [showEconomicImpact, setShowEconomicImpact] = useState(true);
+  const [selectedPlant, setSelectedPlant] = useState(null);
+  const [businessPlant, setBusinessPlant] = useState(null);
 
   const handleParamChange = (name, value) => {
     setParameters(prev => ({ ...prev, [name]: parseFloat(value) }));
@@ -370,6 +373,10 @@ function App() {
   };
 
   const { carbonOutput } = calculateMetrics();
+
+  // Simple economic impact estimate: every point above 85 stability -> $1,750/month
+  const monthlySavings = Math.max(0, Math.round((Number(qualityScore) - 85) * 1750));
+  const annualSavings = monthlySavings * 12;
 
   const getQualityColor = (score) => {
     const s = Number(score);
@@ -773,6 +780,29 @@ function App() {
                 </div>
               </div>
 
+              {/* Economic Impact Overlay (small card) */}
+              <div className="bg-black border border-gray-800 rounded-lg p-4 shadow-inner mb-6">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-xs text-gray-500 font-medium uppercase tracking-wider">Economic Impact</p>
+                  <button onClick={() => setShowEconomicImpact(!showEconomicImpact)} className="text-xs text-gray-400 hover:text-white transition">{showEconomicImpact ? 'Hide' : 'Show'}</button>
+                </div>
+                {showEconomicImpact ? (
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-sm text-gray-400">Estimated monthly savings</div>
+                      <div className="text-2xl font-bold text-white mt-1">${monthlySavings.toLocaleString()}</div>
+                      <div className="text-xs text-gray-500">(~ ${annualSavings.toLocaleString()} / year)</div>
+                    </div>
+                    <div className="text-xs text-gray-500 text-right">
+                      <div>Based on current Stability: <span className="text-white font-mono">{qualityScore}</span></div>
+                      <div className="mt-2 text-[11px]">Assumes reduced scrap & improved yield.</div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-xs text-gray-500">Show estimated cost savings for current stability score.</div>
+                )}
+              </div>
+
               <div className="pt-4 border-t border-gray-800 flex-grow flex flex-col">
                 <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3 flex items-center justify-between">
                   <span>Live Corrections</span>
@@ -803,7 +833,7 @@ function App() {
                   onClick={() => {
                     handleSnapToGolden();
                     setIsDeploying(false);
-                    setCurrentView('deployments');
+                    setCurrentView('selectPlant');
                   }}
                   className="px-6 py-2 bg-white text-black text-sm font-bold rounded-md hover:bg-gray-200 transition-all flex items-center gap-2"
                 >
@@ -813,6 +843,46 @@ function App() {
             </div>
           </div>
         )}
+      </div>
+    );
+  }
+
+  // SELECT PLANT PAGE (new flow step)
+  if (currentView === 'selectPlant') {
+    const plants = [
+      { id: 'plant-a', name: 'Plant A - Line 2' },
+      { id: 'plant-b', name: 'Plant B - Line 1' },
+      { id: 'plant-c', name: 'Plant A - Line 3' },
+    ];
+
+    return (
+      <div className="min-h-screen bg-black text-gray-300 font-sans animate-fade-in relative">
+        <InternalNav />
+        <main className="max-w-4xl mx-auto px-6 py-12 relative z-10">
+          <div className="mb-6">
+            <h1 className="text-3xl font-bold text-white">Select Plant for Deployment</h1>
+            <p className="text-gray-400 text-sm">Choose the target plant/line to push the Golden Signature setpoints.</p>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4">
+            {plants.map((p) => (
+              <div key={p.id} onClick={() => setSelectedPlant(p.id)} className={`p-4 border rounded-lg cursor-pointer transition ${selectedPlant === p.id ? 'border-blue-500 bg-gray-900' : 'border-gray-800 bg-gray-950'}`}>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-white font-medium">{p.name}</div>
+                    <div className="text-xs text-gray-500 mt-1">Edge Node ID: {p.id}</div>
+                  </div>
+                  <div className="text-sm text-gray-400">{selectedPlant === p.id ? 'Selected' : 'Select'}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-8 flex justify-end gap-3">
+            <button onClick={() => setCurrentView('deployments')} className="px-4 py-2 text-sm font-medium text-gray-400 hover:text-white transition-colors">Cancel</button>
+            <button onClick={() => { setCurrentView('deployments'); }} disabled={!selectedPlant} className={`px-6 py-2 bg-white text-black text-sm font-bold rounded-md ${!selectedPlant ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-200'}`}>Confirm Deploy</button>
+          </div>
+        </main>
       </div>
     );
   }
@@ -829,7 +899,8 @@ function App() {
               <p className="text-gray-400 text-sm">Monitor Golden Signature parameter pushes to edge devices.</p>
             </div>
             <div className="flex gap-4">
-               <input type="text" placeholder="Search deployments..." className="bg-gray-900 border border-gray-800 rounded-md px-4 py-2 text-sm text-white focus:outline-none focus:border-gray-500" />
+              <input type="text" placeholder="Search deployments..." className="bg-gray-900 border border-gray-800 rounded-md px-4 py-2 text-sm text-white focus:outline-none focus:border-gray-500" />
+              <button onClick={() => setCurrentView('businessFactors')} className="bg-blue-500 hover:bg-blue-600 text-white text-sm px-3 py-2 rounded">Business Factors</button>
             </div>
           </div>
 
@@ -851,7 +922,10 @@ function App() {
               <div className="text-right flex flex-col items-start md:items-end">
                 <span className="text-sm text-gray-300">Deployed by Engineer (chari)</span>
                 <span className="text-xs text-gray-500 mt-1">Just now • 4.2s execution time</span>
-                <button className="text-xs text-gray-400 border border-gray-700 hover:bg-gray-800 px-3 py-1 rounded mt-2 transition">View Logs</button>
+                  <div className="flex items-center gap-2">
+                    <button className="text-xs text-gray-400 border border-gray-700 hover:bg-gray-800 px-3 py-1 rounded mt-2 transition">View Logs</button>
+                    <button onClick={() => { setBusinessPlant('plant-a'); setCurrentView('businessFactors'); }} className="text-xs bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded mt-2 transition">Business Factors</button>
+                  </div>
               </div>
             </div>
 
@@ -871,7 +945,10 @@ function App() {
               <div className="text-right flex flex-col items-start md:items-end">
                 <span className="text-sm text-gray-300">Automated System Push</span>
                 <span className="text-xs text-blue-400 mt-1">In Progress • 45s</span>
-                <button className="text-xs text-gray-400 border border-gray-700 hover:bg-gray-800 px-3 py-1 rounded mt-2 transition">Cancel</button>
+                <div className="flex items-center gap-2">
+                  <button className="text-xs text-gray-400 border border-gray-700 hover:bg-gray-800 px-3 py-1 rounded mt-2 transition">Cancel</button>
+                  <button onClick={() => { setBusinessPlant('plant-b'); setCurrentView('businessFactors'); }} className="text-xs bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded mt-2 transition">Business Factors</button>
+                </div>
               </div>
             </div>
 
@@ -892,8 +969,67 @@ function App() {
               <div className="text-right flex flex-col items-start md:items-end">
                 <span className="text-sm text-gray-300">Deployed via API</span>
                 <span className="text-xs text-gray-500 mt-1">2d ago • 3.8s execution time</span>
-                <button className="text-xs text-gray-400 border border-gray-700 hover:bg-gray-800 px-3 py-1 rounded mt-2 transition">Redeploy</button>
+                <div className="flex items-center gap-2">
+                  <button className="text-xs text-gray-400 border border-gray-700 hover:bg-gray-800 px-3 py-1 rounded mt-2 transition">Redeploy</button>
+                  <button onClick={() => { setBusinessPlant('plant-c'); setCurrentView('businessFactors'); }} className="text-xs bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded mt-2 transition">Business Factors</button>
+                </div>
               </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  // BUSINESS FACTORS PAGE
+  if (currentView === 'businessFactors') {
+    const deploymentCost = 25000; // example one-time deployment cost
+    const paybackMonths = monthlySavings > 0 ? Math.ceil(deploymentCost / monthlySavings) : '—';
+
+    return (
+      <div className="min-h-screen bg-black text-gray-300 font-sans animate-fade-in relative">
+        <InternalNav />
+        <main className="max-w-5xl mx-auto px-6 py-12 relative z-10">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h1 className="text-3xl font-bold text-white">Business Factors & Impact</h1>
+              <p className="text-gray-400 text-sm">Estimate commercial outcomes from deploying the Golden Signature.</p>
+            </div>
+            <div>
+              <button onClick={() => setCurrentView('deployments')} className="px-4 py-2 text-sm font-medium text-gray-400 hover:text-white transition">Back to Deployments</button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+            <div className="p-4 bg-gray-950 border border-gray-800 rounded-lg">
+              <div className="text-xs text-gray-400">Current Stability</div>
+              <div className="text-2xl font-bold text-white mt-1">{qualityScore}</div>
+            </div>
+            <div className="p-4 bg-gray-950 border border-gray-800 rounded-lg">
+              <div className="text-xs text-gray-400">Estimated Monthly Savings</div>
+              <div className="text-2xl font-bold text-white mt-1">${monthlySavings.toLocaleString()}</div>
+            </div>
+            <div className="p-4 bg-gray-950 border border-gray-800 rounded-lg">
+              <div className="text-xs text-gray-400">Estimated Annual Savings</div>
+              <div className="text-2xl font-bold text-white mt-1">${annualSavings.toLocaleString()}</div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-6">
+            <div className="p-6 bg-gray-950 border border-gray-800 rounded-lg">
+              <h3 className="text-sm font-medium text-white mb-2">Payback Analysis</h3>
+              <div className="text-sm text-gray-400">Assumed one-time deployment cost: <span className="text-white font-mono">${deploymentCost.toLocaleString()}</span></div>
+              <div className="mt-3 text-lg text-white">Estimated payback: <span className="font-bold">{paybackMonths} months</span></div>
+            </div>
+
+            <div className="p-6 bg-gray-950 border border-gray-800 rounded-lg">
+              <h3 className="text-sm font-medium text-white mb-2">Business Levers</h3>
+              <ul className="text-sm text-gray-400 list-disc list-inside space-y-1">
+                <li>Reduced scrap and rework (primary driver of savings)</li>
+                <li>Improved throughput from fewer stoppages</li>
+                <li>Lower energy cost via optimized setpoints</li>
+                <li>Faster ramp-up and fewer failed batches</li>
+              </ul>
             </div>
           </div>
         </main>
